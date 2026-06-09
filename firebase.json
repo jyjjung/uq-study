@@ -1,0 +1,39 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "australia-southeast1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    },
+    "authorizedDomains": [
+      "localhost",
+      "127.0.0.1",
+      "school-6e6a4.firebaseapp.com",
+      "school-6e6a4.web.app",
+      "uq-study.vercel.app",
+      "github.com",
+      "github.io"
+    ]
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "title": "Sample Practice Exam - COMP2048",
+  "questions": [
+    {
+      "stem": "Which of the following best describes a Deterministic Finite Automaton (DFA)?",
+      "options": [
+        { "id": "a", "text": "An abstract machine that accepts or rejects strings by transitioning through states based on input symbols" },
+        { "id": "b", "text": "A database management system for storing automata" },
+        { "id": "c", "text": "A type of programming language compiler" },
+        { "id": "d", "text": "A network protocol for distributed computing" }
+      ],
+      "correctAnswer": "a",
+      "explanation": "A DFA is a theoretical model of computation that processes input strings symbol by symbol, transitioning between a finite set of states.",
+      "topic": "Finite Automata",
+      "media": [
+        {
+          "type": "table",
+          "caption": "State transition example",
+          "tableData": [
+            ["State", "Input 0", "Input 1"],
+            ["q0", "q1", "q0"],
+            ["q1", "q1", "q2"],
+            ["q2", "q2", "q2"]
+          ]
+        }
+      ]
+    },
+    {
+      "stem": "The class P is defined as the set of decision problems solvable in:",
+      "options": [
+        { "id": "a", "text": "Polynomial time by a deterministic Turing machine" },
+        { "id": "b", "text": "Exponential time by any algorithm" },
+        { "id": "c", "text": "Constant time with unlimited memory" },
+        { "id": "d", "text": "Non-deterministic polynomial space" }
+      ],
+      "correctAnswer": "a",
+      "explanation": "P is the class of problems solvable in polynomial time on a deterministic Turing machine.",
+      "topic": "Complexity Theory"
+    },
+    {
+      "stem": "Which problem is known to be undecidable?",
+      "options": [
+        { "id": "a", "text": "The Halting Problem" },
+        { "id": "b", "text": "Sorting a list of integers" },
+        { "id": "c", "text": "Finding the shortest path in a graph" },
+        { "id": "d", "text": "Matrix multiplication" }
+      ],
+      "correctAnswer": "a",
+      "explanation": "The Halting Problem was proven undecidable by Alan Turing — no algorithm can determine whether an arbitrary program will halt.",
+      "topic": "Decidability"
+    }
+  ]
+}

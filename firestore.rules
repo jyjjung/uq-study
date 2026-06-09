@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string
+        && request.resource.data[field].size() >= minLen
+        && request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidUserProfile(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'enrolledCourses', 'enrolledPrograms', 'programTitles', 'updatedAt', 'createdAt'])
+        && data.uid is string
+        && data.uid == request.auth.uid
+        && data.email is string
+        && data.email.size() <= 254
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('enrolledCourses' in data) || (data.enrolledCourses is list && data.enrolledCourses.size() <= 50))
+        && (!('enrolledPrograms' in data) || (data.enrolledPrograms is list && data.enrolledPrograms.size() <= 20))
+        && (!('programTitles' in data) || data.programTitles is map);
+    }
+
+    function isValidPracticeExam(data) {
+      return hasOnlyAllowedFields(['title', 'courseCode', 'assessmentId', 'assessmentName', 'questions', 'userId', 'createdAt'])
+        && validStringLength('title', 1, 200)
+        && validStringLength('courseCode', 1, 12)
+        && data.userId is string
+        && data.userId == request.auth.uid
+        && data.createdAt is string
+        && data.questions is list
+        && data.questions.size() <= 500
+        && data.questions.size() >= 1;
+    }
+
+    function isValidPracticeExamUpdate(data) {
+      return hasOnlyAllowedFields(['title', 'courseCode', 'assessmentId', 'assessmentName', 'questions', 'userId', 'createdAt'])
+        && (!('title' in data) || validStringLength('title', 1, 200))
+        && (!('courseCode' in data) || validStringLength('courseCode', 1, 12))
+        && (!('userId' in data) || (data.userId is string && data.userId == request.auth.uid))
+        && (!('createdAt' in data) || data.createdAt is string)
+        && (!('questions' in data) || (data.questions is list && data.questions.size() <= 500 && data.questions.size() >= 1));
+    }
+
+    function isValidQuestionProgress(data) {
+      return hasOnlyAllowedFields(['questionId', 'courseCode', 'topic', 'module', 'sourceExamId', 'assessmentId', 'correct', 'total', 'sm2', 'lastResult'])
+        && validStringLength('questionId', 1, 200)
+        && validStringLength('courseCode', 1, 12)
+        && validStringLength('topic', 1, 200)
+        && (!('module' in data) || (data.module is string && data.module.size() <= 200))
+        && (!('sourceExamId' in data) || (data.sourceExamId is string && data.sourceExamId.size() <= 200))
+        && data.correct is number && data.correct >= 0
+        && data.total is number && data.total >= 0
+        && data.sm2 is map
+        && (!('lastResult' in data) || data.lastResult is bool);
+    }
+
+    function isValidGradeEntry(data) {
+      return hasOnlyAllowedFields(['courseCode', 'courseTitle', 'units', 'assessments', 'updatedAt'])
+        && validStringLength('courseCode', 1, 12)
+        && validStringLength('courseTitle', 1, 300)
+        && data.units is number && data.units >= 1 && data.units <= 16
+        && data.assessments is list
+        && data.assessments.size() <= 30;
+    }
+
+    function isValidTimelineDate(data) {
+      return hasOnlyAllowedFields(['eventId', 'courseCode', 'userDate', 'updatedAt'])
+        && validStringLength('eventId', 1, 200)
+        && validStringLength('courseCode', 1, 12)
+        && validStringLength('userDate', 10, 10)
+        && data.userDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidPracticeExamSession(data) {
+      return hasOnlyAllowedFields(['examId', 'courseCode', 'questionOrder', 'currentIndex', 'answers', 'submitted', 'flagged', 'updatedAt'])
+        && validStringLength('examId', 1, 200)
+        && validStringLength('courseCode', 1, 12)
+        && data.questionOrder is list
+        && data.questionOrder.size() <= 500
+        && data.currentIndex is number
+        && data.currentIndex >= 0
+        && data.answers is map
+        && data.submitted is map
+        && data.flagged is list
+        && data.flagged.size() <= 500;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /practiceExams/{examId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidPracticeExam(request.resource.data);
+        allow update: if isOwner(userId) && isValidPracticeExamUpdate(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /questionProgress/{questionId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidQuestionProgress(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /gradeEntries/{courseCode} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidGradeEntry(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /timelineDates/{eventId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidTimelineDate(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /practiceExamSessions/{examId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidPracticeExamSession(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
