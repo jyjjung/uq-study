@@ -12,7 +12,7 @@ import {
   deletePracticeExamWithData,
   updatePracticeExam,
 } from "@/lib/firestore/db";
-import { parseUploadedExam } from "@/lib/exam/generator";
+import { parseExamJsonText } from "@/lib/exam/generator";
 import { UploadExamForm } from "@/components/exam/UploadExamForm";
 import { QuizEditor } from "@/components/quiz/QuizEditor";
 import type { ExamQuestion, PracticeExam } from "@/lib/exam/types";
@@ -79,7 +79,7 @@ export default function QuizzesPage() {
     json: string,
   ) => {
     if (!user) return;
-    const parsed = parseUploadedExam(JSON.parse(json), exam.courseCode, "");
+    const parsed = parseExamJsonText(json, exam.courseCode);
     if (!parsed) throw new Error("Invalid quiz");
     await updatePracticeExam(user.uid, exam.id, {
       title: title || parsed.title,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { parseUploadedExam } from "@/lib/exam/generator";
+import { parseExamJsonText } from "@/lib/exam/generator";
 import type { PracticeExam } from "@/lib/exam/types";
 
 interface QuizEditorProps {
@@ -30,9 +30,8 @@ export function QuizEditor({ exam, onSave, onCancel }: QuizEditorProps) {
     setError("");
     setSaving(true);
     try {
-      const parsed = JSON.parse(json) as unknown;
-      const result = parseUploadedExam(parsed, exam.courseCode, "");
-      if (!result || result.questions.length === 0) {
+      const result = parseExamJsonText(json, exam.courseCode);
+      if (!result) {
         setError("Invalid quiz JSON. Need a questions array with at least one item.");
         return;
       }
@@ -68,8 +67,8 @@ export function QuizEditor({ exam, onSave, onCancel }: QuizEditorProps) {
           className="w-full rounded-lg border border-gray-200 px-3 py-2 font-mono text-xs focus:border-[#51247a] focus:outline-none focus:ring-1 focus:ring-[#51247a]"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Each question needs a <code>module</code> number (e.g.{" "}
-          <code>4</code>) for study by module.
+          Each question needs a <code>module</code> number or{" "}
+          <code>&quot;topic&quot;: &quot;Module 4&quot;</code> for study by module.
         </p>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}

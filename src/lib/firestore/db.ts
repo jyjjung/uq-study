@@ -12,7 +12,7 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebase/config";
+import { getFirestoreDb, getFirebaseStorage } from "../firebase/config";
 import type {
   PracticeExam,
   ExamQuestion,
@@ -72,7 +72,7 @@ export interface PracticeExamSession extends PracticeExamSessionState {
 }
 
 function userRef(uid: string) {
-  return doc(db, "users", uid);
+  return doc(getFirestoreDb(), "users", uid);
 }
 
 /** Firestore rejects `undefined` anywhere in document data. */
@@ -221,7 +221,7 @@ export async function savePracticeExam(
   uid: string,
   exam: Omit<PracticeExam, "id" | "userId" | "createdAt">,
 ): Promise<string> {
-  const examRef = doc(collection(db, "users", uid, "practiceExams"));
+  const examRef = doc(collection(getFirestoreDb(), "users", uid, "practiceExams"));
   await setDoc(
     examRef,
     stripUndefined({
@@ -237,7 +237,7 @@ export async function getPracticeExams(
   uid: string,
   courseCode?: string,
 ): Promise<PracticeExam[]> {
-  const examsRef = collection(db, "users", uid, "practiceExams");
+  const examsRef = collection(getFirestoreDb(), "users", uid, "practiceExams");
   const q = courseCode
     ? query(examsRef, where("courseCode", "==", courseCode.toUpperCase()))
     : examsRef;
@@ -249,7 +249,7 @@ export async function getQuestionProgress(
   uid: string,
   courseCode?: string,
 ): Promise<QuestionProgress[]> {
-  const progressRef = collection(db, "users", uid, "questionProgress");
+  const progressRef = collection(getFirestoreDb(), "users", uid, "questionProgress");
   const q = courseCode
     ? query(progressRef, where("courseCode", "==", courseCode.toUpperCase()))
     : progressRef;
@@ -265,14 +265,14 @@ export async function updateQuestionProgress(
   sm2: SM2Card,
 ): Promise<void> {
   const docId = progressDocId(question);
-  const progressRef = doc(db, "users", uid, "questionProgress", docId);
+  const progressRef = doc(getFirestoreDb(), "users", uid, "questionProgress", docId);
   const existing = await getDoc(progressRef);
   let prev = existing.data() as QuestionProgress | undefined;
 
   const originalId = getOriginalQuestionId(question.id);
   const examId = question.sourceExamId;
   if (!prev && examId && examId !== "uploaded" && docId !== originalId) {
-    const legacyRef = doc(db, "users", uid, "questionProgress", originalId);
+    const legacyRef = doc(getFirestoreDb(), "users", uid, "questionProgress", originalId);
     const legacySnap = await getDoc(legacyRef);
     if (legacySnap.exists()) {
       prev = legacySnap.data() as QuestionProgress;
@@ -302,7 +302,7 @@ export async function updatePracticeExam(
   examId: string,
   data: Pick<PracticeExam, "title" | "questions" | "courseCode">,
 ): Promise<void> {
-  const examRef = doc(db, "users", uid, "practiceExams", examId);
+  const examRef = doc(getFirestoreDb(), "users", uid, "practiceExams", examId);
   await setDoc(
     examRef,
     stripUndefined({
@@ -319,7 +319,7 @@ export async function deleteQuestionProgressForExam(
   exam: PracticeExam,
 ): Promise<void> {
   const progressSnap = await getDocs(
-    collection(db, "users", uid, "questionProgress"),
+    collection(getFirestoreDb(), "users", uid, "questionProgress"),
   );
   const questionIds = new Set(
     exam.questions.flatMap((q) => [q.id, `${exam.id}:${q.id}`]),
@@ -343,7 +343,7 @@ export async function deletePracticeExamWithData(
   uid: string,
   examId: string,
 ): Promise<void> {
-  const examRef = doc(db, "users", uid, "practiceExams", examId);
+  const examRef = doc(getFirestoreDb(), "users", uid, "practiceExams", examId);
   const snap = await getDoc(examRef);
   if (snap.exists()) {
     const exam = { id: snap.id, ...snap.data() } as PracticeExam;
@@ -357,7 +357,7 @@ export async function saveGradeEntry(
   uid: string,
   entry: GradeEntry,
 ): Promise<void> {
-  const gradeRef = doc(db, "users", uid, "gradeEntries", entry.courseCode);
+  const gradeRef = doc(getFirestoreDb(), "users", uid, "gradeEntries", entry.courseCode);
   await setDoc(
     gradeRef,
     stripUndefined({
@@ -369,7 +369,7 @@ export async function saveGradeEntry(
 }
 
 export async function getGradeEntries(uid: string): Promise<GradeEntry[]> {
-  const snap = await getDocs(collection(db, "users", uid, "gradeEntries"));
+  const snap = await getDocs(collection(getFirestoreDb(), "users", uid, "gradeEntries"));
   return snap.docs.map((d) => d.data() as GradeEntry);
 }
 
@@ -381,7 +381,7 @@ export async function getTimelineDates(
   uid: string,
 ): Promise<Record<string, string>> {
   try {
-    const snap = await getDocs(collection(db, "users", uid, "timelineDates"));
+    const snap = await getDocs(collection(getFirestoreDb(), "users", uid, "timelineDates"));
     const map: Record<string, string> = {};
     for (const d of snap.docs) {
       const data = d.data() as TimelineDateOverride;
@@ -400,7 +400,7 @@ export async function saveTimelineDate(
   courseCode: string,
   userDate: string,
 ): Promise<void> {
-  const dateRef = doc(db, "users", uid, "timelineDates", timelineDocId(eventId));
+  const dateRef = doc(getFirestoreDb(), "users", uid, "timelineDates", timelineDocId(eventId));
   await setDoc(
     dateRef,
     stripUndefined({
@@ -417,7 +417,7 @@ export async function deleteTimelineDate(
   eventId: string,
 ): Promise<void> {
   await deleteDoc(
-    doc(db, "users", uid, "timelineDates", timelineDocId(eventId)),
+    doc(getFirestoreDb(), "users", uid, "timelineDates", timelineDocId(eventId)),
   );
 }
 
@@ -427,7 +427,7 @@ export async function getPracticeExamSession(
 ): Promise<PracticeExamSession | null> {
   try {
     const snap = await getDoc(
-      doc(db, "users", uid, "practiceExamSessions", examId),
+      doc(getFirestoreDb(), "users", uid, "practiceExamSessions", examId),
     );
     return snap.exists() ? (snap.data() as PracticeExamSession) : null;
   } catch (err) {
@@ -442,7 +442,7 @@ export async function savePracticeExamSession(
   courseCode: string,
   state: PracticeExamSessionState,
 ): Promise<void> {
-  const sessionRef = doc(db, "users", uid, "practiceExamSessions", examId);
+  const sessionRef = doc(getFirestoreDb(), "users", uid, "practiceExamSessions", examId);
   await setDoc(
     sessionRef,
     stripUndefined({
@@ -458,7 +458,7 @@ export async function deletePracticeExamSession(
   uid: string,
   examId: string,
 ): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "practiceExamSessions", examId));
+  await deleteDoc(doc(getFirestoreDb(), "users", uid, "practiceExamSessions", examId));
 }
 
 export async function uploadExamFile(
@@ -467,7 +467,7 @@ export async function uploadExamFile(
   courseCode: string,
 ): Promise<string> {
   const path = `users/${uid}/exams/${courseCode}/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, path);
+  const storageRef = ref(getFirebaseStorage(), path);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
 }
@@ -476,7 +476,7 @@ export async function deletePracticeExam(
   uid: string,
   examId: string,
 ): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "practiceExams", examId));
+  await deleteDoc(doc(getFirestoreDb(), "users", uid, "practiceExams", examId));
 }
 
 export { createNewCard };

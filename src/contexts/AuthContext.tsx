@@ -15,7 +15,7 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
+import { getFirebaseAuth } from "@/lib/firebase/config";
 import { upsertUserProfile } from "@/lib/firestore/db";
 
 interface AuthContextValue {
@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const auth = getFirebaseAuth();
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
@@ -56,11 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const cred = await createUserWithEmailAndPassword(
+      getFirebaseAuth(),
+      email,
+      password,
+    );
     await updateProfile(cred.user, { displayName });
     await upsertUserProfile(cred.user.uid, {
       uid: cred.user.uid,
@@ -73,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await signOut(getFirebaseAuth());
   };
 
   return (

@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getFirestoreDb } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
 import { ExamPlayer } from "@/components/exam/ExamPlayer";
 import {
@@ -53,7 +53,7 @@ function PracticeContent({ examId }: { examId: string }) {
     async function loadExam() {
       try {
         const snap = await getDoc(
-          doc(db, "users", user!.uid, "practiceExams", examId),
+          doc(getFirestoreDb(), "users", user!.uid, "practiceExams", examId),
         );
         if (cancelled) return;
         if (!snap.exists()) {

@@ -3,6 +3,30 @@ import type { SM2Card } from "../spaced-repetition/sm2";
 import { isDue } from "../spaced-repetition/sm2";
 import { parseModuleNumber } from "./modules";
 
+const CITATION_MARKERS = /\[cite_start\]|\[cite:\s*[^\]]*\]/gi;
+
+export function sanitizeExamJsonText(text: string): string {
+  return text.replace(/\[cite_start\]/gi, "");
+}
+
+function cleanCitationArtifacts(text: string): string {
+  return text.replace(CITATION_MARKERS, "").trim();
+}
+
+export function parseExamJsonText(
+  text: string,
+  courseCode: string,
+): { title: string; questions: ExamQuestion[] } | null {
+  try {
+    const json = JSON.parse(sanitizeExamJsonText(text.trim()));
+    const parsed = parseUploadedExam(json, courseCode, "");
+    if (!parsed || parsed.questions.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export function buildStudyRecommendations(
   progress: Array<{
     topic: string;
@@ -71,13 +95,14 @@ export function parseUploadedExam(
 
   const questions: ExamQuestion[] = data.questions.map((q: unknown, i: number) => {
     const item = q as Record<string, unknown>;
-    const moduleNumber = parseModuleNumber(item.module);
+    const moduleNumber =
+      parseModuleNumber(item.module) ?? parseModuleNumber(item.topic);
     const question: ExamQuestion = {
       id: (item.id as string) ?? `uploaded-${i}`,
       type: (item.type as ExamQuestion["type"]) ?? "multiple_choice",
-      stem: String(item.stem ?? item.question ?? ""),
+      stem: cleanCitationArtifacts(String(item.stem ?? item.question ?? "")),
       correctAnswer: (item.correctAnswer ?? item.answer ?? "") as string | string[],
-      explanation: String(item.explanation ?? ""),
+      explanation: cleanCitationArtifacts(String(item.explanation ?? "")),
     };
     if (moduleNumber) {
       question.module = moduleNumber;
@@ -87,7 +112,7 @@ export function parseUploadedExam(
         const opt = o as Record<string, unknown>;
         return {
           id: (opt.id as string) ?? String.fromCharCode(97 + j),
-          text: String(opt.text ?? o),
+          text: cleanCitationArtifacts(String(opt.text ?? o)),
         };
       });
     }

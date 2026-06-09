@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Upload, FileJson } from "lucide-react";
-import { parseUploadedExam } from "@/lib/exam/generator";
+import { parseExamJsonText } from "@/lib/exam/generator";
 import type { ExamQuestion } from "@/lib/exam/types";
 
 interface UploadExamFormProps {
@@ -32,16 +32,6 @@ const SAMPLE_FORMAT = `{
   ]
 }`;
 
-function parseExamJson(
-  text: string,
-  courseCode: string,
-): { title: string; questions: ExamQuestion[] } | null {
-  const json = JSON.parse(text);
-  const parsed = parseUploadedExam(json, courseCode, "");
-  if (!parsed || parsed.questions.length === 0) return null;
-  return parsed;
-}
-
 export function UploadExamForm({ courseCode, onUpload }: UploadExamFormProps) {
   const [error, setError] = useState("");
   const [showFormat, setShowFormat] = useState(false);
@@ -59,7 +49,7 @@ export function UploadExamForm({ courseCode, onUpload }: UploadExamFormProps) {
 
     try {
       const text = await file.text();
-      const parsed = parseExamJson(text, courseCode);
+      const parsed = parseExamJsonText(text, courseCode);
       if (!parsed) {
         setError("Invalid exam format. See the sample format below.");
         return;
@@ -81,7 +71,7 @@ export function UploadExamForm({ courseCode, onUpload }: UploadExamFormProps) {
     }
 
     try {
-      const parsed = parseExamJson(trimmed, courseCode);
+      const parsed = parseExamJsonText(trimmed, courseCode);
       if (!parsed) {
         setError("Invalid exam format. See the sample format below.");
         return;

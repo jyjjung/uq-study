@@ -1,7 +1,7 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,9 +13,45 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export default app;
+function isConfigured(): boolean {
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+}
+
+function initFirebase() {
+  if (app && auth && db && storage) {
+    return { app, auth, db, storage };
+  }
+
+  if (!isConfigured()) {
+    throw new Error(
+      "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* environment variables.",
+    );
+  }
+
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  return { app, auth, db, storage };
+}
+
+export function getFirebaseAuth(): Auth {
+  return initFirebase().auth;
+}
+
+export function getFirestoreDb(): Firestore {
+  return initFirebase().db;
+}
+
+export function getFirebaseStorage(): FirebaseStorage {
+  return initFirebase().storage;
+}
+
+export function getFirebaseApp(): FirebaseApp {
+  return initFirebase().app;
+}
