@@ -103,41 +103,34 @@ export function ExamPlayer({
     };
   }, [currentIndex, answers, submitted, flagged, questionQueue, onSessionChange]);
 
-  const handleSelect = useCallback(
+  const submitAnswer = useCallback(
     (optionId: string) => {
-      if (submitted[instanceId]) return;
+      if (!question || submitted[instanceId]) return;
+
+      const timeSpent = Date.now() - questionStart;
+      const correct =
+        typeof question.correctAnswer === "string"
+          ? optionId === question.correctAnswer
+          : Array.isArray(question.correctAnswer) &&
+            question.correctAnswer.includes(optionId);
+
       setAnswers((prev) => ({ ...prev, [instanceId]: optionId }));
+      setSubmitted((prev) => ({ ...prev, [instanceId]: true }));
+
+      if (!correct) {
+        setQuestionQueue((prev) => [
+          ...prev,
+          {
+            instanceId: `${question.id}-retry-${Date.now()}`,
+            question,
+          },
+        ]);
+      }
+
+      onAnswer?.(question, correct, timeSpent);
     },
-    [instanceId, submitted],
+    [instanceId, onAnswer, question, questionStart, submitted],
   );
-
-  const checkAnswer = useCallback(() => {
-    if (!question) return;
-    const selected = answers[instanceId];
-    if (!selected) return;
-
-    const timeSpent = Date.now() - questionStart;
-    const correct =
-      typeof question.correctAnswer === "string"
-        ? selected === question.correctAnswer
-        : Array.isArray(selected) &&
-          Array.isArray(question.correctAnswer) &&
-          selected.every((s) => question.correctAnswer.includes(s));
-
-    setSubmitted((prev) => ({ ...prev, [instanceId]: true }));
-
-    if (!correct) {
-      setQuestionQueue((prev) => [
-        ...prev,
-        {
-          instanceId: `${question.id}-retry-${Date.now()}`,
-          question,
-        },
-      ]);
-    }
-
-    onAnswer?.(question, !!correct, timeSpent);
-  }, [answers, instanceId, question, questionStart, onAnswer]);
 
   const finishExam = useCallback(() => {
     const sessionAnswers: ExamSessionAnswer[] = questionQueue.map((item) => {
@@ -187,12 +180,9 @@ export function ExamPlayer({
 
       if (e.key === "Enter") {
         e.preventDefault();
-        if (!submitted[instanceId]) {
-          if (answers[instanceId]) checkAnswer();
-        } else if (isLast) {
-          finishExam();
-        } else {
-          goNext();
+        if (submitted[instanceId]) {
+          if (isLast) finishExam();
+          else goNext();
         }
         return;
       }
@@ -205,7 +195,7 @@ export function ExamPlayer({
         if (!option) return;
 
         e.preventDefault();
-        handleSelect(option.id);
+        submitAnswer(option.id);
         return;
       }
 
@@ -221,15 +211,13 @@ export function ExamPlayer({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    answers,
-    checkAnswer,
     finishExam,
     goNext,
     goPrev,
-    handleSelect,
     instanceId,
     isLast,
     question,
+    submitAnswer,
     submitted,
   ]);
 
@@ -351,7 +339,7 @@ export function ExamPlayer({
                     name={instanceId}
                     value={opt.id}
                     checked={selected}
-                    onChange={() => handleSelect(opt.id)}
+                    onChange={() => submitAnswer(opt.id)}
                     disabled={!!submitted[instanceId]}
                     className="mt-1 h-4 w-4 accent-[#51247a]"
                   />
@@ -413,30 +401,24 @@ export function ExamPlayer({
         </div>
 
         <div className="flex gap-2">
-          {!submitted[instanceId] ? (
-            <button
-              onClick={checkAnswer}
-              disabled={!answers[instanceId]}
-              className="rounded-lg bg-[#51247a] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-            >
-              Submit answer <span className="text-white/70">↵</span>
-            </button>
-          ) : isLast ? (
-            <button
-              onClick={finishExam}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Finish exam
-            </button>
-          ) : (
-            <button
-              onClick={goNext}
-              className="flex items-center gap-1 rounded-lg bg-[#51247a] px-4 py-2 text-sm font-medium text-white"
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
+          {submitted[instanceId] &&
+            (isLast ? (
+              <button
+                onClick={finishExam}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Finish exam <span className="text-white/70">↵</span>
+              </button>
+            ) : (
+              <button
+                onClick={goNext}
+                className="flex items-center gap-1 rounded-lg bg-[#51247a] px-4 py-2 text-sm font-medium text-white"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+                <span className="text-white/70">↵</span>
+              </button>
+            ))}
         </div>
       </div>
     </div>
