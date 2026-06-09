@@ -23,6 +23,25 @@ function resolveQuestion(
   return questions.find((q) => instanceId.startsWith(`${q.id}-`));
 }
 
+const RETRY_OFFSET = 5;
+const MIN_REMAINING_FOR_RETRY_OFFSET = 4;
+
+function insertWrongAnswerRetry(
+  queue: QueueItem[],
+  currentIndex: number,
+  retryItem: QueueItem,
+): QueueItem[] {
+  const remainingAfterCurrent = queue.length - 1 - currentIndex;
+  if (remainingAfterCurrent < MIN_REMAINING_FOR_RETRY_OFFSET) {
+    return [...queue, retryItem];
+  }
+
+  const insertIndex = currentIndex + RETRY_OFFSET + 1;
+  const next = [...queue];
+  next.splice(Math.min(insertIndex, next.length), 0, retryItem);
+  return next;
+}
+
 function buildQueueFromOrder(
   questions: ExamQuestion[],
   order: string[],
@@ -118,18 +137,18 @@ export function ExamPlayer({
       setSubmitted((prev) => ({ ...prev, [instanceId]: true }));
 
       if (!correct) {
-        setQuestionQueue((prev) => [
-          ...prev,
-          {
-            instanceId: `${question.id}-retry-${Date.now()}`,
-            question,
-          },
-        ]);
+        const retryItem: QueueItem = {
+          instanceId: `${question.id}-retry-${Date.now()}`,
+          question,
+        };
+        setQuestionQueue((prev) =>
+          insertWrongAnswerRetry(prev, currentIndex, retryItem),
+        );
       }
 
       onAnswer?.(question, correct, timeSpent);
     },
-    [instanceId, onAnswer, question, questionStart, submitted],
+    [currentIndex, instanceId, onAnswer, question, questionStart, submitted],
   );
 
   const finishExam = useCallback(() => {
