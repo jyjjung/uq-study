@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchCourseProfile } from "@/lib/uq/course-profile";
+import { fetchCourseProfileEdge } from "@/lib/uq/edge-course-profile";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const maxDuration = 30;
+export const runtime = "edge";
 
 export async function GET(
   _request: NextRequest,
@@ -16,7 +15,7 @@ export async function GET(
   }
 
   try {
-    const profile = await fetchCourseProfile(id);
+    const profile = await fetchCourseProfileEdge(id);
     return NextResponse.json({ profile });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);

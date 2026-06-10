@@ -1,16 +1,13 @@
-import { fetchUqHtml } from "./http";
+import { fetchUqHtmlEdge } from "./edge-fetch";
 import { parseCourseProfileHtml } from "./profile-parse";
 import type { UQCourseProfile } from "./types";
 
-export { extractProfileId, isCurrentProfileUrl } from "./profile-utils";
-export { parseCourseProfileHtml } from "./profile-parse";
-
 const PROFILE_BASE = "https://course-profiles.uq.edu.au";
 
-export async function fetchCourseProfile(
+export async function fetchCourseProfileEdge(
   profileId: string,
 ): Promise<UQCourseProfile> {
-  const html = await fetchUqHtml(
+  const html = await fetchUqHtmlEdge(
     `${PROFILE_BASE}/course-profiles/${profileId}`,
   );
   return parseCourseProfileHtml(html, profileId);

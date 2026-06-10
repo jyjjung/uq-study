@@ -4,7 +4,7 @@ export function stripHtml(text: string): string {
 
 export function textById(html: string, elementId: string): string {
   const re = new RegExp(
-    `id=["']${elementId}["'][^>]*>([\\s\\S]*?)</(?:div|p|td|span|h\\d|section|article)>`,
+    `id=["']${elementId}["'][^>]*>([\\s\\S]*?)</[^>]+>`,
     "i",
   );
   const match = html.match(re);

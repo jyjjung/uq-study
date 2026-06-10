@@ -203,9 +203,9 @@ export async function fetchCourse(courseCode: string): Promise<UQCourse> {
     }
 
     offerings.push({
-      semester: textOf($, `#course-offering-${idx}-semester`),
+      semester: textOf($, `#course-offering-${idx}-sem`),
       mode: textOf($, `#course-offering-${idx}-mode`),
-      campus: textOf($, `#course-offering-${idx}-campus`) || undefined,
+      campus: textOf($, `#course-offering-${idx}-loc`) || undefined,
       profileUrl,
     });
   });
