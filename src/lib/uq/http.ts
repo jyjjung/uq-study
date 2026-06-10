@@ -12,12 +12,51 @@ const BROWSER_HEADERS: HeadersInit = {
   "Cache-Control": "no-cache",
 };
 
-export async function fetchUqHtml(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: BROWSER_HEADERS,
+function proxyHeaders(): HeadersInit {
+  const secret = process.env.UQ_PROXY_SECRET;
+  return secret ? { "x-uq-proxy-secret": secret } : {};
+}
+
+function headersFor(url: string): HeadersInit {
+  const origin = new URL(url).origin;
+  return {
+    ...BROWSER_HEADERS,
+    Referer: `${origin}/`,
+  };
+}
+
+async function fetchDirect(url: string): Promise<Response> {
+  return fetch(url, {
+    method: "GET",
+    headers: headersFor(url),
     cache: "no-store",
     signal: AbortSignal.timeout(25_000),
   });
+}
+
+async function fetchViaProxy(url: string, proxyBase: string): Promise<Response> {
+  const proxyUrl = `${proxyBase}?url=${encodeURIComponent(url)}`;
+  return fetch(proxyUrl, {
+    method: "GET",
+    headers: proxyHeaders(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(28_000),
+  });
+}
+
+export async function fetchUqHtml(url: string): Promise<string> {
+  const proxyBase = process.env.UQ_PROXY_URL?.replace(/\/$/, "");
+
+  let res: Response;
+  if (proxyBase) {
+    res = await fetchViaProxy(url, proxyBase);
+  } else {
+    res = await fetchDirect(url);
+    // UQ blocks many cloud datacenter IPs with 405 — retry via proxy if configured
+    if (res.status === 405 && process.env.UQ_PROXY_URL_FALLBACK) {
+      res = await fetchViaProxy(url, process.env.UQ_PROXY_URL_FALLBACK);
+    }
+  }
 
   if (!res.ok) {
     throw new Error(`UQ fetch failed: ${res.status} ${url}`);

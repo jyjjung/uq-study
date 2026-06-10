@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchUQ } from "@/lib/uq/scraper";
+import { searchUQEdge } from "@/lib/uq/edge-search";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const maxDuration = 30;
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q");
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const results = await searchUQ(q.trim(), type ?? "all");
+    const results = await searchUQEdge(q.trim(), type ?? "all");
     return NextResponse.json({ results });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
