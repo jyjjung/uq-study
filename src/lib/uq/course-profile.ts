@@ -6,9 +6,9 @@ import type {
   UQLearningOutcome,
 } from "./types";
 
+import { fetchUqHtml } from "./http";
+
 const PROFILE_BASE = "https://course-profiles.uq.edu.au";
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; UQStudyBot/1.0; +https://uq-study.app)";
 
 function cleanText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -41,12 +41,7 @@ function classifyAssessment(
 
 async function fetchProfileHtml(profileId: string): Promise<string> {
   const url = `${PROFILE_BASE}/course-profiles/${profileId}`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) throw new Error(`Profile fetch failed: ${res.status} ${url}`);
-  return res.text();
+  return fetchUqHtml(url);
 }
 
 function parseLearningOutcomes(

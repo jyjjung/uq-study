@@ -4,6 +4,7 @@ import {
   fetchCourseProfile,
   isCurrentProfileUrl,
 } from "./course-profile";
+import { fetchUqHtml } from "./http";
 import type {
   UQAssessment,
   UQCourse,
@@ -14,17 +15,10 @@ import type {
 } from "./types";
 
 const BASE_URL = "https://programs-courses.uq.edu.au";
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; UQStudyBot/1.0; +https://uq-study.app)";
 
 async function fetchHtml(path: string): Promise<string> {
   const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) throw new Error(`UQ fetch failed: ${res.status} ${url}`);
-  return res.text();
+  return fetchUqHtml(url);
 }
 
 function textOf(

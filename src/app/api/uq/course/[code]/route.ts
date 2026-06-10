@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchCourse } from "@/lib/uq/scraper";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ code: string }> },
@@ -15,9 +19,10 @@ export async function GET(
     const course = await fetchCourse(code);
     return NextResponse.json({ course });
   } catch (error) {
-    console.error("UQ course fetch error:", error);
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error("UQ course fetch error:", detail);
     return NextResponse.json(
-      { error: "Failed to fetch course information" },
+      { error: "Failed to fetch course information", detail },
       { status: 500 },
     );
   }
