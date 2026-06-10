@@ -257,8 +257,11 @@ export function ExamPlayer({
     return null;
   }
 
+  const canGoNext = submitted[instanceId] && !isLast;
+  const canFinish = submitted[instanceId] && isLast;
+
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl pb-28 md:pb-24">
       <div className="mb-4 flex items-center justify-between rounded-t-lg border border-gray-300 bg-[#e8e8e8] px-4 py-2">
         <span className="text-sm font-medium text-gray-700">
           Question {currentIndex + 1} of {questionQueue.length}
@@ -388,56 +391,39 @@ export function ExamPlayer({
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          onClick={goPrev}
-          disabled={currentIndex === 0}
-          className="flex items-center gap-1 rounded-lg border border-gray-300 px-4 py-2 text-sm disabled:opacity-40"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </button>
+      <div className="fixed bottom-16 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur md:bottom-0">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={currentIndex === 0}
+            className="flex items-center gap-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </button>
 
-        <div className="flex max-w-[40%] flex-wrap justify-center gap-1">
-          {questionQueue.map((item, i) => (
+          {canFinish ? (
             <button
-              key={item.instanceId}
-              onClick={() => {
-                setCurrentIndex(i);
-                setQuestionStart(Date.now());
-              }}
-              className={`h-2 w-2 rounded-full ${
-                i === currentIndex
-                  ? "bg-[#51247a]"
-                  : answers[item.instanceId]
-                    ? "bg-[#51247a]/40"
-                    : flagged.has(item.instanceId)
-                      ? "bg-amber-400"
-                      : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-2">
-          {submitted[instanceId] &&
-            (isLast ? (
-              <button
-                onClick={finishExam}
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white"
-              >
-                Finish exam <span className="text-white/70">↵</span>
-              </button>
-            ) : (
-              <button
-                onClick={goNext}
-                className="flex items-center gap-1 rounded-lg bg-[#51247a] px-4 py-2 text-sm font-medium text-white"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-                <span className="text-white/70">↵</span>
-              </button>
-            ))}
+              type="button"
+              onClick={finishExam}
+              className="flex items-center gap-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white"
+            >
+              Finish exam
+              <span className="text-white/70">↵</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canGoNext}
+              className="flex items-center gap-1 rounded-lg bg-[#51247a] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-white/70">↵</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
